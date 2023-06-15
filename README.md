@@ -1,4 +1,5 @@
-# Cloud Computing Section
+# Cloud Computing (CC) for HerbalScan
+
 # Cloud Computing Team :
 * Elham Herlambang Prasetia
 * Roy Dwi Fauzi
