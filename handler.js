@@ -149,6 +149,62 @@ async function getPlantById(req, res) {
   }
 }
 
+// Handler untuk menyimpan tumbuhan
+async function savePlant(req, res) {
+  try {
+    const { id } = req.body;
+    const { email } = req.user;
+
+    // Cek apakah tumbuhan sudah disimpan sebelumnya
+    const savedPlantSnapshot = await savedPlantsCollectionRef
+      .where('userId', '==', email)
+      .where('plantId', '==', id)
+      .get();
+
+    if (!savedPlantSnapshot.empty) {
+      return res.status(400).json({ error: 'Plant already saved' });
+    }
+
+    // Simpan tumbuhan ke daftar yang disimpan
+    await savedPlantsCollectionRef.add({
+      userId: email,
+      plantId: id
+    });
+
+    res.json({ message: 'Plant saved successfully' });
+  } catch (error) {
+    console.error('Error saving plant:', error);
+    res.status(500).json({ error: 'Something went wrong' });
+  }
+}
+
+// Handler untuk mendapatkan daftar tumbuhan yang disimpan
+async function getSavedPlants(req, res) {
+  try {
+    const { email } = req.user;
+
+    // Mengambil daftar tumbuhan yang disimpan oleh pengguna
+    const savedPlantsSnapshot = await savedPlantsCollectionRef
+      .where('userId', '==', email)
+      .get();
+
+    // Mengumpulkan ID tumbuhan yang disimpan
+    const plantIds = savedPlantsSnapshot.docs.map(doc => doc.data().plantId);
+
+    // Mengambil data tumbuhan berdasarkan ID yang disimpan
+    const plantsSnapshot = await plantsCollectionRef
+      .where(admin.firestore.FieldPath.documentId(), 'in', plantIds)
+      .get();
+
+    // Mengembalikan daftar tumbuhan yang disimpan
+    const savedPlants = plantsSnapshot.docs.map(doc => doc.data());
+
+    res.status(200).json({ data: savedPlants });
+  } catch (error) {
+    console.error('Error getting saved plants:', error);
+    res.status(500).json({ error: 'Something went wrong' });
+  }
+}
 
 module.exports = {
   registerHandler,
@@ -156,5 +212,7 @@ module.exports = {
   logoutHandler,
   verifyToken,
   verifyTokenExpiry,
-  getPlantById
+  getPlantById,
+  getSavedPlants,
+  savePlant
 };
